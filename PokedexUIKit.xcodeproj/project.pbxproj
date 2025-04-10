@@ -14,7 +14,7 @@
 		151F034B2DA7A1BF00A5F0B0 /* Exceptions for "PokedexUIKit" folder in "PokedexUIKit" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
+				Resources/Info.plist,
 			);
 			target = 151F03382DA7A1BD00A5F0B0 /* PokedexUIKit */;
 		};
@@ -147,7 +147,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 35V95TRX69;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = PokedexUIKit/Info.plist;
+				INFOPLIST_FILE = PokedexUIKit/Resources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = "";
@@ -175,7 +175,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 35V95TRX69;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = PokedexUIKit/Info.plist;
+				INFOPLIST_FILE = PokedexUIKit/Resources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = "";
