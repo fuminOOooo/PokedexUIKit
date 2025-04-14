@@ -37,7 +37,7 @@ enum PokemonAPIRouter: HTTPRouterProtocol {
         switch self {
         case .fetchPokemonPage(let request):
             return ["offset": request.offset, "limit": request.limit]
-        case .fetchPokemonSearch(let request):
+        case .fetchPokemonSearch(_):
             return [:]
         }
     }
