@@ -15,26 +15,31 @@ protocol BaseListViewModelInputProtocol {
 
 protocol BaseListViewModelOutputProtocol {
     var items: Observable<[PokemonOverview]> { get }
-    var query: PublishSubject<String> { get }
+    var query: BehaviorRelay<String> { get }
     var error: PublishSubject<String> { get }
-    var searchBarPlaceholder: String { get }
+    var isButtonEnabled: Observable<Bool> { get }
 }
 
 typealias BaseListViewModelProtocol = BaseListViewModelInputProtocol & BaseListViewModelOutputProtocol
 
 final class BaseListViewModel: BaseListViewModelProtocol {
     
-    let loadPokemonUseCase: LoadPokemonUseCaseProtocol
-    var itemsRelay: BehaviorRelay<[PokemonOverview]> = .init(value: [])
-    let bag: DisposeBag
+    private let loadPokemonUseCase: LoadPokemonUseCaseProtocol
+    private let itemsRelay: BehaviorRelay<[PokemonOverview]> = .init(value: [])
+    private let bag: DisposeBag
     
     var currentPage: Int = 0
     
     // MARK: - Output
     var items: Observable<[PokemonOverview]> { return itemsRelay.asObservable() }
-    var query: PublishSubject<String> = .init()
+    var query: BehaviorRelay<String> = .init(value: .init())
     var error: PublishSubject<String> = .init()
-    var searchBarPlaceholder: String = "Search Pokemon"
+    var isButtonEnabled: Observable<Bool> {
+        return query.asObservable()
+            .map { query in
+                return !query.isEmpty
+            }
+    }
     
     // MARK: - Init
     init(
