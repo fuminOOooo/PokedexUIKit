@@ -16,6 +16,8 @@ protocol DetailsViewModelInputProtocol {
 protocol DetailsViewModelOutputProtocol {
     var details: Observable<Pokemon> { get }
     var abilities: Observable<[AbilityDetails]> { get }
+    
+    var error: BehaviorRelay<DetailsError?> { get }
 }
 
 typealias DetailsViewModelProtocol = DetailsViewModelInputProtocol & DetailsViewModelOutputProtocol
@@ -29,7 +31,9 @@ final class DetailsViewModel: DetailsViewModelProtocol {
     private let query: String
     
     // MARK: - Output
-    var details: Observable<Pokemon> { return detailsRelay.asObservable() }
+    var details: Observable<Pokemon> {
+        return detailsRelay.asObservable()
+    }
     var abilities: Observable<[AbilityDetails]> {
         return detailsRelay
             .compactMap { $0 }
@@ -38,6 +42,8 @@ final class DetailsViewModel: DetailsViewModelProtocol {
                 return abilities
             }
     }
+    
+    let error: BehaviorRelay<DetailsError?> = .init(value: nil)
     
     init(
         query: String,
@@ -79,8 +85,12 @@ extension DetailsViewModel {
                 onSuccess: { [weak self] result in
                     guard let self else { return }
                     detailsRelay.accept(result)
-                }, onFailure: { error in
-                    // TODO: Handle Pokemon Search Loading Error
+                }, onFailure: { [weak self] error in
+                    guard
+                        let self,
+                        let error = error as? DetailsError
+                    else { return }
+                    self.error.accept(error)
                 }
             )
             .disposed(by: bag)

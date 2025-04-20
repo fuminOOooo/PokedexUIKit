@@ -31,8 +31,8 @@ final class PokemonRepository: PokemonRepositoryProtocol {
                         switch response.result {
                         case .success(let responseDTO):
                             return single(.success(responseDTO.toDomain()))
-                        case .failure(let error):
-                            return single(.failure(error))
+                        case .failure(_):
+                            return single(.failure(ListError.loadingListFailed))
                         }
                     }
                 
@@ -65,8 +65,8 @@ final class PokemonRepository: PokemonRepositoryProtocol {
                         switch response.result {
                         case .success(let responseDTO):
                             return single(.success(responseDTO.toDomain()))
-                        case .failure(let error):
-                            return single(.failure(error))
+                        case .failure(_):
+                            return single(.failure(DetailsError.failedLodingDetails))
                         }
                     }
                 

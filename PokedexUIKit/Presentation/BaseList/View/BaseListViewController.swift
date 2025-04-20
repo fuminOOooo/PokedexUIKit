@@ -7,6 +7,7 @@
 
 import UIKit
 import RxSwift
+import XLPagerTabStrip
 
 class BaseListViewController: UIViewController {
     
@@ -49,7 +50,7 @@ class BaseListViewController: UIViewController {
             
             textField.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: padding),
             textField.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -padding),
-            textField.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
+            textField.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: padding),
             textField.bottomAnchor.constraint(equalTo: button.topAnchor, constant: -padding),
             
             button.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: padding),
@@ -60,7 +61,7 @@ class BaseListViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: button.bottomAnchor, constant: padding),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            tableView.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor),
             
         ])
     }
@@ -79,7 +80,7 @@ class BaseListViewController: UIViewController {
         let view = UITextField()
         view.autocapitalizationType = .none
         view.autocorrectionType = .no
-        view.placeholder = "Search Pokemon"
+        view.placeholder = "Search Pokemon (Name/Number)"
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -109,7 +110,7 @@ extension BaseListViewController {
         
         textField.rx.text
             .orEmpty
-            .bind(to: viewModel.query)
+            .bind(to: viewModel.queryRelay)
             .disposed(by: bag)
         
     }
@@ -127,7 +128,7 @@ extension BaseListViewController {
             .bind(to: button.rx.backgroundColor)
             .disposed(by: bag)
         
-        viewModel.query
+        viewModel.queryRelay
             .map { query in
                 return "Check details on : " + query
             }
@@ -137,7 +138,7 @@ extension BaseListViewController {
         button.rx.tap
             .subscribe (onNext: { [weak self] in
                 guard let self else { return }
-                let query = viewModel.query.value
+                let query = viewModel.queryRelay.value
                 navigateToPokemonDetails(with: query)
             })
             .disposed(by: bag)
@@ -183,6 +184,26 @@ extension BaseListViewController {
         
     }
     
+    private func setupErrorBinding() {
+        
+        viewModel.error
+            .asDriver()
+            .drive(
+                onNext: { [weak self] error in
+                    guard
+                        let self,
+                        let error
+                    else { return }
+                    presentSingleAlert(
+                        with: "Loading Failed",
+                        showing: error.rawValue
+                    )
+                }
+            )
+            .disposed(by: bag)
+        
+    }
+    
 }
 
 extension BaseListViewController {
@@ -205,10 +226,7 @@ extension BaseListViewController {
     
     private func navigateToPokemonDetails(with overview: PokemonOverview) {
         
-        guard let query = overview.name else {
-            // TODO: Handle empty query error
-            return
-        }
+        guard let query = overview.name else { return }
         let detailsViewModel = DetailsViewModel(query: query)
         let detailsViewController = DetailsViewController(viewModel: detailsViewModel)
         detailsViewController.navigationItem.title = overview.name.formattedForName()
@@ -222,6 +240,14 @@ extension BaseListViewController {
         let detailsViewController = DetailsViewController(viewModel: detailsViewModel)
         self.navigationController?.pushViewController(detailsViewController, animated: true)
         
+    }
+    
+}
+
+extension BaseListViewController: IndicatorInfoProvider {
+    
+    func indicatorInfo(for pagerTabStripController: PagerTabStripViewController) -> IndicatorInfo {
+        return IndicatorInfo(title: "Pokedex")
     }
     
 }

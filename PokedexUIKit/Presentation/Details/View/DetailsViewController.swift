@@ -8,6 +8,7 @@
 import UIKit
 import RxSwift
 import RxCocoa
+import MBProgressHUD
 import Kingfisher
 
 class DetailsViewController: UIViewController {
@@ -31,6 +32,11 @@ class DetailsViewController: UIViewController {
         self.setupLayoutGuide()
         self.setupBindings()
         viewModel.viewDidLoad()
+        
+        loadingHUD = MBProgressHUD.showAdded(to: view, animated: true)
+        loadingHUD.mode = MBProgressHUDMode.indeterminate
+        
+        loadingHUD.label.text = "Loading"
     }
     
     private func setupUI() {
@@ -70,10 +76,16 @@ class DetailsViewController: UIViewController {
         self.bindPokemonName()
         self.bindImages()
         self.bindAbilitiesTable()
+        self.bindDetailsError()
         
     }
     
     // MARK: - UI Components
+    
+    private lazy var loadingHUD: MBProgressHUD = {
+        let view = MBProgressHUD()
+        return view
+    }()
     
     private lazy var imagesStack: UIStackView = {
         let view = UIStackView()
@@ -123,16 +135,19 @@ extension DetailsViewController {
     private func bindImages() {
         
         viewModel.details
-            .subscribe(
+            .asDriver(onErrorDriveWith: .never())
+            .drive(
                 onNext: { [weak self] details in
                     guard let self else { return }
                     setFrontImage(with: details.sprites?.frontDefault)
+                    loadingHUD.hide(animated: true)
                 }
             )
             .disposed(by: bag)
         
         viewModel.details
-            .subscribe(
+            .asDriver(onErrorDriveWith: .never())
+            .drive(
                 onNext: { [weak self] details in
                     guard let self else { return }
                     setBackImage(with: details.sprites?.backDefault)
@@ -148,11 +163,44 @@ extension DetailsViewController {
             .bind(to: abilitiesTable.rx.items(
                 cellIdentifier: "cell",
                 cellType: UITableViewCell.self)
-            ) { row, item, cell in
-                cell.textLabel?.text = item.ability?.name.formattedForName()
+            ) { [weak self] row, item, cell in
+                guard let self else { return }
+                didUpdateTable(with: item, on: cell)
             }
             .disposed(by: bag)
                   
+    }
+    
+    private func bindDetailsError() {
+        
+        viewModel.error
+            .asDriver()
+            .drive(onNext: { [weak self] error in
+                
+                guard
+                    let self,
+                    let error
+                else { return }
+                
+                loadingHUD.hide(animated: true)
+                
+                presentSingleAlert(
+                    with: "Pokemon Details Failed",
+                    showing: error.rawValue,
+                    adding: [
+                        UIAlertAction(title: "Retry", style: .default) { _ in
+                            self.viewModel.loadPokemonDetails()
+                            self.loadingHUD.show(animated: true)
+                        },
+                        UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                            self.navigationController?.popViewController(animated: true)
+                        }
+                    ]
+                )
+                
+            })
+            .disposed(by: bag)
+        
     }
     
 }
@@ -173,8 +221,8 @@ extension DetailsViewController {
         backImageView.kf.setImage(with: url)
     }
     
-    private func didUpdateTable(with item: Ability, on cell: UITableViewCell) {
-        cell.textLabel?.text = item.name.formattedForName()
+    private func didUpdateTable(with item: AbilityDetails, on cell: UITableViewCell) {
+        cell.textLabel?.text = item.ability?.name.formattedForName()
     }
     
 }
