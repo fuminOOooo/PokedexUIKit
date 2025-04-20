@@ -15,9 +15,10 @@ protocol BaseListViewModelInputProtocol {
 
 protocol BaseListViewModelOutputProtocol {
     var items: Observable<[PokemonOverview]> { get }
-    var query: BehaviorRelay<String> { get }
-    var error: PublishSubject<String> { get }
+    var queryRelay: BehaviorRelay<String> { get }
     var isButtonEnabled: Observable<Bool> { get }
+    
+    var error: BehaviorRelay<ListError?> { get }
 }
 
 typealias BaseListViewModelProtocol = BaseListViewModelInputProtocol & BaseListViewModelOutputProtocol
@@ -31,15 +32,18 @@ final class BaseListViewModel: BaseListViewModelProtocol {
     var currentPage: Int = 0
     
     // MARK: - Output
-    var items: Observable<[PokemonOverview]> { return itemsRelay.asObservable() }
-    var query: BehaviorRelay<String> = .init(value: .init())
-    var error: PublishSubject<String> = .init()
+    let queryRelay: BehaviorRelay<String> = .init(value: .init())
+    var items: Observable<[PokemonOverview]> {
+        return itemsRelay.asObservable()
+    }
     var isButtonEnabled: Observable<Bool> {
-        return query.asObservable()
+        return queryRelay.asObservable()
             .map { query in
                 return !query.isEmpty
             }
     }
+    
+    let error: BehaviorRelay<ListError?> = .init(value: nil)
     
     // MARK: - Init
     init(
@@ -85,8 +89,12 @@ extension BaseListViewModel {
                     appendItems(with: results)
                     incrementPage()
                 },
-                onFailure: { error in
-                    // TODO: Handle Pokemon Page Loading Error
+                onFailure: { [weak self] error in
+                    guard
+                        let self,
+                        let error = error as? ListError
+                    else { return }
+                    self.error.accept(error)
                 }
             )
             .disposed(by: bag)
